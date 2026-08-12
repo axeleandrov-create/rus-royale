@@ -110,34 +110,24 @@ function resize(){
   let handH = 0;
   if (playing) {
     if (handEl && !handEl.classList.contains('hidden'))
-      handH = Math.max(handH, handEl.getBoundingClientRect().height);
+      handH = Math.max(handH, handEl.getBoundingClientRect().height || 0);
     if (trayEl && !trayEl.classList.contains('hidden'))
-      handH = Math.max(handH, trayEl.getBoundingClientRect().height);
+      handH = Math.max(handH, trayEl.getBoundingClientRect().height || 0);
   }
-  const safeTop = 4;
-  const marginTop = Math.max(28, safeTop + 22);
-  /* Меньше отступ под руку → поле боя крупнее */
+  const phone = cssW <= 520;
+  const marginTop = phone ? 32 : 40;
   const marginBot = playing
-    ? Math.max(96, Math.round(handH + 10))
-    : Math.max(16, 4);
-  const sidePad = cssW < 520 ? 2 : 10;
+    ? Math.max(phone ? 160 : 180, Math.round(handH + (phone ? 16 : 24)))
+    : 24;
+  const sidePad = phone ? 8 : 16;
   const availH = Math.max(80, H - marginTop - marginBot);
   const availW = Math.max(80, W - sidePad * 2);
   const aspect = ARENA.w / ARENA.h;
   let fw = availW, fh = fw / aspect;
   if (fh > availH) { fh = availH; fw = fh * aspect; }
-  /* Поле на максимум доступной области (с сохранением пропорций арены) */
-  if (cssW <= 900) {
-    fh = availH;
-    fw = Math.min(availW, fh * aspect);
-    if (fw < availW && fh / (availW / aspect) <= availH) {
-      fw = availW;
-      fh = fw / aspect;
-    }
-  }
   field = {
     x: (W - fw) / 2,
-    y: marginTop + Math.max(0, (availH - fh) * 0.15),
+    y: marginTop + (availH - fh) / 2,
     w: fw,
     h: fh
   };
@@ -150,28 +140,20 @@ if (window.visualViewport) {
 }
 resize();
 
-/** Камера дальше ≈ меньше актёры. На телефоне ~×0.5 от прошлой шкалы. */
-function isPhoneView(){
-  return W <= 520 || (typeof window !== 'undefined' && window.innerWidth <= 520);
+/** На маленьком экране всё на 20% компактнее (юниты/башни). */
+function phoneViewScale(){
+  return (W > 0 ? W : window.innerWidth) <= 520 ? 0.8 : 1;
 }
-function worldActorScale(){
-  /* «Отдалить камеру» + просторное поле: юниты заметно мельче */
-  if (W <= 400) return 0.30;
-  if (W <= 480) return 0.34;
-  if (W <= 560) return 0.40;
-  if (W <= 900) return 0.55;
-  return 0.72;
-}
-/** Плоская доска + лёгкий угол камеры: ближе к игроку чуть крупнее. */
+/** Плоская доска + лёгкий угол камеры. */
 function depthScale(ly){
-  const t=Math.max(0,Math.min(1,(ly||0)/ARENA.h));
-  return 1.05-t*0.14;
+  const t = Math.max(0, Math.min(1, (ly || 0) / ARENA.h));
+  return 1.05 - t * 0.14;
 }
-function toScreen(lx,ly){
-  return{
-    x:field.x+(lx/ARENA.w)*field.w,
-    y:field.y+field.h-((ly/ARENA.h)*field.h),
-    scale:depthScale(ly)*worldActorScale()
+function toScreen(lx, ly){
+  return {
+    x: field.x + (lx / ARENA.w) * field.w,
+    y: field.y + field.h - ((ly / ARENA.h) * field.h),
+    scale: depthScale(ly) * phoneViewScale()
   };
 }
 function toLogic(sx,sy){
@@ -3050,26 +3032,25 @@ function drawUnit(u){
     const t = Math.min(1, u.spawnAlpha);
     spawnPop = t < 0.55 ? (0.2 + t * 1.7) : (1.15 - (t - 0.55) * 0.33);
   }
-  const ws = worldActorScale();
   const scale = (u.atkAnim > 0 ? 1.1 : 1) * roleScale * spawnPop * (s.scale || 1);
   const alpha = (u.spawnAlpha!=null?u.spawnAlpha:1) * (u.dying ? Math.max(0,(u.deathTimer||0)/0.85) : 1);
   ctx.globalAlpha = alpha;
-  /* CR: тень у ног + тонкое командное кольцо — без залитого диска на спрайт */
-  const foot = 14 * roleScale * (s.scale || 1);
+  /* CR: тень у ног + тонкое командное кольцо */
+  const footR = 14 * roleScale * (s.scale || 1);
   ctx.fillStyle = 'rgba(0,0,0,0.32)';
-  ctx.beginPath(); ctx.ellipse(x, s.y + 5 * ws, foot * 0.95, 3.6 * ws, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, s.y + 7, footR, 4.5 * phoneViewScale(), 0, 0, Math.PI * 2); ctx.fill();
   const team = (window.VisualTheme && VisualTheme.TEAM[u.side==='me'?'me':'ai']) || null;
   ctx.beginPath();
-  ctx.ellipse(x, s.y + 4 * ws, foot * 0.88, 3.4 * ws, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, s.y + 6, footR * 0.93, 4.2 * phoneViewScale(), 0, 0, Math.PI * 2);
   ctx.strokeStyle = team ? team.stroke : (u.side === 'me' ? 'rgba(100,181,246,0.75)' : 'rgba(239,154,154,0.75)');
-  ctx.lineWidth = Math.max(1.2, 2 * ws);
+  ctx.lineWidth = 2;
   ctx.stroke();
   if(u.auraHeal>0){
     ctx.globalAlpha = alpha * (0.35 + 0.25 * Math.sin(ambientT * 4));
     ctx.strokeStyle = 'rgba(129,199,132,0.55)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.ellipse(x, s.y + 4 * ws, foot * 1.15, 4.2 * ws, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, s.y + 6, footR * 1.2, 5.5 * phoneViewScale(), 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = alpha;
   }
@@ -3083,13 +3064,13 @@ function drawUnit(u){
   ctx.imageSmoothingQuality = 'high';
   if(u.char && u.char.anim){
     const fr = u.char.anim.current();
-    const sz = Math.round(48 * scale);
+    const sz = Math.round(58 * scale);
     if(u.char.face < 0){
       ctx.translate(x, 0); ctx.scale(-1, 1); ctx.translate(-x, 0);
     }
     if(fr) ctx.drawImage(fr, x - sz/2, y - sz + 6, sz, sz);
   } else {
-    ctx.font = Math.round(22 * scale) + 'px system-ui';
+    ctx.font = Math.round(24 * scale) + 'px system-ui';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(u.emoji || '⚔️', x, y - 8);
   }
@@ -3131,10 +3112,9 @@ function drawUnit(u){
   }
   if(!u.dying){
     const pct = Math.max(0, u.hp / u.max);
-    const ws = worldActorScale();
-    const bw = Math.round(28 * roleScale * Math.max(ws, 0.75));
-    const bh = Math.round(y - 30 * roleScale * ws);
-    const barH = Math.max(7, Math.round(9 * ws));
+    const bw = Math.round(30 * roleScale * phoneViewScale());
+    const bh = Math.round(y - 34 * roleScale * phoneViewScale());
+    const barH = 8;
     ctx.fillStyle = '#111'; ctx.fillRect(x - bw/2, bh, bw, barH);
     ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
     ctx.strokeRect(x - bw/2 + 0.5, bh + 0.5, bw - 1, barH - 1);
@@ -3823,18 +3803,12 @@ class Hand3D {
     const h = this.canvas.clientHeight || 220;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h);
-    /* Телефон: карты читаемые; поле боя отдельно максимально большое */
-    if (w < 480) {
-      this.camera.fov = 30;
-      this.camera.position.set(0, 38, 300);
-      this._cardScale = 1.28;
-    } else {
-      this.camera.fov = 34;
-      this.camera.position.set(0, 55, 420);
-      this._cardScale = 1;
-    }
+    this.camera.fov = 34;
+    this.camera.position.set(0, 55, 420);
     this.camera.lookAt(0, 8, 0);
     this.camera.updateProjectionMatrix();
+    /* На телефоне карты на 20% меньше, чтобы помещались */
+    this._cardScale = w <= 520 ? 0.8 : 1;
     this.layout();
   }
   clear(){
@@ -3861,19 +3835,15 @@ class Hand3D {
   layout(){
     const n = this.cards.length;
     if(!n) return;
-    const narrow = (this.canvas.clientWidth || window.innerWidth) < 480;
-    const gap = narrow
-      ? Math.min(102, 400 / Math.max(n, 1))
-      : Math.min(132, 500 / Math.max(n, 1));
-    const fan = narrow ? 0.04 : 0.1;
+    const narrow = (this.canvas.clientWidth || window.innerWidth) <= 520;
+    const gap = Math.min(narrow ? 108 : 132, (narrow ? 420 : 500) / Math.max(n, 1));
     const sc = this._cardScale || 1;
     for(let i = 0; i < n; i++){
       const t = n === 1 ? 0.5 : i / (n - 1);
-      const x = (t - 0.5) * gap * n * (narrow ? 0.9 : 0.95);
-      const rotY = (0.5 - t) * fan;
-      const z = -Math.abs(t - 0.5) * (narrow ? 3 : 8);
-      const y = 0;
-      this.cards[i].setBase(x, y, z, rotY);
+      const x = (t - 0.5) * gap * n * 0.95;
+      const rotY = (0.5 - t) * 0.1;
+      const z = -Math.abs(t - 0.5) * 8;
+      this.cards[i].setBase(x, 0, z, rotY);
       this.cards[i].baseScale = sc;
     }
   }

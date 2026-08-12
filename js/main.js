@@ -115,16 +115,23 @@ function resize(){
       handH = Math.max(handH, trayEl.getBoundingClientRect().height || 0);
   }
   /* Те же отступы, что на компе — телефон = уменьшенная копия */
-  const marginTop = 40;
+  const phone = cssW <= 520;
+  const marginTop = phone ? 28 : 40;
   const marginBot = playing
-    ? Math.max(180, Math.round(handH + 24))
+    ? Math.max(phone ? 140 : 180, Math.round(handH + (phone ? 12 : 24)))
     : 24;
-  const sidePad = 12;
+  const sidePad = phone ? 8 : 12;
   const availH = Math.max(80, H - marginTop - marginBot);
   const availW = Math.max(80, W - sidePad * 2);
   const aspect = ARENA.w / ARENA.h;
   let fw = availW, fh = fw / aspect;
   if (fh > availH) { fh = availH; fw = fh * aspect; }
+  /* Только телефон: камера выше — поле и юниты меньше, видно больше */
+  if (phone) {
+    const cam = 0.78;
+    fw *= cam;
+    fh *= cam;
+  }
   field = {
     x: (W - fw) / 2,
     y: marginTop + (availH - fh) / 2,
@@ -3811,12 +3818,13 @@ class Hand3D {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.fov = 34;
-    /* Дальше камера на узком экране → те же пропорции карт, что на компе */
-    const z = 420 * Math.max(1, 420 / Math.max(280, w));
-    this.camera.position.set(0, 55, z);
+    /* На телефоне карты меньше (камера выше), на компе без изменений */
+    const phone = w <= 520;
+    const baseZ = 420 * Math.max(1, 420 / Math.max(280, w));
+    this.camera.position.set(0, phone ? 62 : 55, phone ? baseZ * 1.22 : baseZ);
     this.camera.lookAt(0, 8, 0);
     this.camera.updateProjectionMatrix();
-    this._cardScale = 1;
+    this._cardScale = phone ? 0.78 : 1;
     this.layout();
   }
   clear(){

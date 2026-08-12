@@ -75,19 +75,19 @@
       #topbar{font-size:.75rem;padding:5px 8px;padding-top:max(5px,env(safe-area-inset-top))}
       #topbar .timer{font-size:.92rem}
       #hand-tray{
-        height:min(152px,22vh)!important;width:100vw;max-width:100%;
+        height:min(280px,36vh)!important;width:100vw;max-width:100%;
         border-radius:14px 14px 0 0;
         padding:2px 4px max(2px,env(safe-area-inset-bottom));
       }
-      .card{width:58px;height:80px}
-      .card .role-badge{width:22px;height:22px;font-size:.82rem}
-      .card .cost{width:20px;height:20px;font-size:.62rem}
+      .card{width:145px;height:200px}
+      .card .role-badge{width:36px;height:36px;font-size:1.1rem}
+      .card .cost{width:32px;height:32px;font-size:.9rem}
       #elixir-wrap{
-        bottom:calc(min(152px,22vh) + 4px + env(safe-area-inset-bottom,0px))!important;
-        width:min(180px,64vw);height:10px;
+        bottom:calc(min(280px,36vh) + 4px + env(safe-area-inset-bottom,0px))!important;
+        width:min(200px,70vw);height:12px;
       }
       #hand3d{
-        height:min(152px,22vh)!important;
+        height:min(280px,36vh)!important;
         padding-bottom:env(safe-area-inset-bottom,0px);
       }
       #btn-play{padding:14px 12px;font-size:1.05rem}

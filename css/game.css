@@ -54,18 +54,19 @@
     @media (max-width:480px){
       #topbar{font-size:.72rem;padding:4px 8px;padding-top:max(4px,env(safe-area-inset-top))}
       #topbar .timer{font-size:.9rem}
+      /* Компактнее рука → больше места полю боя; карты всё ещё крупные за счёт 3D-камеры */
       #hand-tray{
-        height:min(210px,30vh);width:100vw;max-width:100%;
-        border-radius:16px 16px 0 0;
-        padding-bottom:max(6px,env(safe-area-inset-bottom));
+        height:min(168px,22vh);width:100vw;max-width:100%;
+        border-radius:14px 14px 0 0;
+        padding-bottom:max(4px,env(safe-area-inset-bottom));
       }
-      .card{width:72px;height:100px}
+      .card{width:68px;height:94px}
       #elixir-wrap{
-        bottom:calc(min(210px,30vh) + 6px + env(safe-area-inset-bottom,0px));
-        width:min(260px,84vw);height:14px;
+        bottom:calc(min(168px,22vh) + 4px + env(safe-area-inset-bottom,0px));
+        width:min(260px,84vw);height:12px;
       }
       #hand3d{
-        height:min(210px,30vh);
+        height:min(168px,22vh);
         padding-bottom:env(safe-area-inset-bottom,0px);
       }
       #btn-play{padding:16px 12px;font-size:1.1rem}

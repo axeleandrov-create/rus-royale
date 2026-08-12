@@ -114,26 +114,30 @@ function resize(){
     if (trayEl && !trayEl.classList.contains('hidden'))
       handH = Math.max(handH, trayEl.getBoundingClientRect().height);
   }
-  const safeTop = 8;
-  const safeBot = 4;
-  const marginTop = Math.max(36, safeTop + 28);
+  const safeTop = 4;
+  const marginTop = Math.max(28, safeTop + 22);
+  /* Меньше отступ под руку → поле боя крупнее */
   const marginBot = playing
-    ? Math.max(120, Math.round(handH + 28))
-    : Math.max(24, safeBot);
-  const sidePad = cssW < 420 ? 6 : 12;
+    ? Math.max(96, Math.round(handH + 10))
+    : Math.max(16, 4);
+  const sidePad = cssW < 520 ? 2 : 10;
   const availH = Math.max(80, H - marginTop - marginBot);
   const availW = Math.max(80, W - sidePad * 2);
   const aspect = ARENA.w / ARENA.h;
   let fw = availW, fh = fw / aspect;
   if (fh > availH) { fh = availH; fw = fh * aspect; }
-  /* На телефоне заполняем высоту, но чуть уже — ощущение «отдаления» */
-  if (cssW <= 560) {
+  /* Поле на максимум доступной области (с сохранением пропорций арены) */
+  if (cssW <= 900) {
     fh = availH;
-    fw = Math.min(availW * 0.92, fh * aspect);
+    fw = Math.min(availW, fh * aspect);
+    if (fw < availW && fh / (availW / aspect) <= availH) {
+      fw = availW;
+      fh = fw / aspect;
+    }
   }
   field = {
     x: (W - fw) / 2,
-    y: marginTop + (availH - fh) / 2,
+    y: marginTop + Math.max(0, (availH - fh) * 0.15),
     w: fw,
     h: fh
   };
@@ -146,15 +150,17 @@ if (window.visualViewport) {
 }
 resize();
 
-/** На телефоне «камера дальше»: юниты/башни меньше, карты в руке крупнее. */
+/** Камера дальше ≈ меньше актёры. На телефоне ~×0.5 от прошлой шкалы. */
 function isPhoneView(){
   return W <= 520 || (typeof window !== 'undefined' && window.innerWidth <= 520);
 }
 function worldActorScale(){
-  if (W <= 400) return 0.58;
-  if (W <= 480) return 0.64;
-  if (W <= 560) return 0.78;
-  return 1;
+  /* «Отдалить камеру» + просторное поле: юниты заметно мельче */
+  if (W <= 400) return 0.30;
+  if (W <= 480) return 0.34;
+  if (W <= 560) return 0.40;
+  if (W <= 900) return 0.55;
+  return 0.72;
 }
 /** Плоская доска + лёгкий угол камеры: ближе к игроку чуть крупнее. */
 function depthScale(ly){
@@ -3077,7 +3083,7 @@ function drawUnit(u){
   ctx.imageSmoothingQuality = 'high';
   if(u.char && u.char.anim){
     const fr = u.char.anim.current();
-    const sz = Math.round(52 * scale);
+    const sz = Math.round(48 * scale);
     if(u.char.face < 0){
       ctx.translate(x, 0); ctx.scale(-1, 1); ctx.translate(-x, 0);
     }
@@ -3817,11 +3823,11 @@ class Hand3D {
     const h = this.canvas.clientHeight || 220;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h);
-    /* Телефон: карты крупнее (камера ближе), поле боя отдельно «отдалено» */
+    /* Телефон: карты читаемые; поле боя отдельно максимально большое */
     if (w < 480) {
-      this.camera.fov = 32;
-      this.camera.position.set(0, 42, 340);
-      this._cardScale = 1.22;
+      this.camera.fov = 30;
+      this.camera.position.set(0, 38, 300);
+      this._cardScale = 1.28;
     } else {
       this.camera.fov = 34;
       this.camera.position.set(0, 55, 420);

@@ -92,17 +92,58 @@ function sfxAttackMelee(){ if(window.GameAudio) GameAudio.play('attack_melee'); 
 
 
 function resize(){
-  W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;
-  if(hand3d) hand3d.resize();
-  const marginTop=40, marginBot=200;
-  const availH=H-marginTop-marginBot, availW=W-16;
-  const aspect=ARENA.w/ARENA.h;
-  let fw=availW, fh=fw/aspect;
-  if(fh>availH){fh=availH;fw=fh*aspect;}
-  field={x:(W-fw)/2,y:marginTop+(availH-fh)/2,w:fw,h:fh};
+  const vv = window.visualViewport;
+  const cssW = Math.max(1, Math.round((vv && vv.width) || window.innerWidth));
+  const cssH = Math.max(1, Math.round((vv && vv.height) || window.innerHeight));
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  if (ctx && ctx.setTransform) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  W = cssW; H = cssH;
+  if (hand3d) hand3d.resize();
+
+  const handEl = document.getElementById('hand3d');
+  const trayEl = document.getElementById('hand-tray');
+  const playing = state === 'play' && !matchOver;
+  let handH = 0;
+  if (playing) {
+    if (handEl && !handEl.classList.contains('hidden'))
+      handH = Math.max(handH, handEl.getBoundingClientRect().height);
+    if (trayEl && !trayEl.classList.contains('hidden'))
+      handH = Math.max(handH, trayEl.getBoundingClientRect().height);
+  }
+  const safeTop = 8;
+  const safeBot = 4;
+  const marginTop = Math.max(36, safeTop + 28);
+  const marginBot = playing
+    ? Math.max(120, Math.round(handH + 28))
+    : Math.max(24, safeBot);
+  const sidePad = cssW < 420 ? 6 : 12;
+  const availH = Math.max(80, H - marginTop - marginBot);
+  const availW = Math.max(80, W - sidePad * 2);
+  const aspect = ARENA.w / ARENA.h;
+  let fw = availW, fh = fw / aspect;
+  if (fh > availH) { fh = availH; fw = fh * aspect; }
+  /* На телефоне заполняем высоту плотнее — меньше «пустых» полей */
+  if (cssW <= 560 && fh < availH * 0.98) {
+    fh = availH;
+    fw = Math.min(availW, fh * aspect);
+  }
+  field = {
+    x: (W - fw) / 2,
+    y: marginTop + (availH - fh) / 2,
+    w: fw,
+    h: fh
+  };
 }
-window.addEventListener('resize',resize);
-window.addEventListener('orientationchange',()=>setTimeout(resize,100));
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 150));
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', resize);
+  window.visualViewport.addEventListener('scroll', resize);
+}
 resize();
 
 /** Плоская доска как раньше + лёгкий «угол камеры»: ближе к игроку чуть крупнее. */
@@ -218,6 +259,7 @@ function startMatch(){
   document.getElementById('elixir-wrap').style.display='block';
   if(hand3d) hand3d.setActive(true);
   renderHand();updateHUD();
+  requestAnimationFrame(()=>{ resize(); if(hand3d) hand3d.resize(); });
   toast('В бой!');
 }
 
@@ -3759,7 +3801,17 @@ class Hand3D {
     const h = this.canvas.clientHeight || 220;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h);
+    /* На узком экране камера чуть дальше — карты не обрезаются */
+    if (w < 480) {
+      this.camera.fov = 38;
+      this.camera.position.set(0, 48, 480);
+    } else {
+      this.camera.fov = 34;
+      this.camera.position.set(0, 55, 420);
+    }
+    this.camera.lookAt(0, 8, 0);
     this.camera.updateProjectionMatrix();
+    this.layout();
   }
   clear(){
     this.cards.forEach(c => c.dispose());
@@ -3785,13 +3837,16 @@ class Hand3D {
   layout(){
     const n = this.cards.length;
     if(!n) return;
-    // Ряд почти плоский: слабый веер, без сильного наклона
-    const gap = Math.min(132, 500 / Math.max(n, 1));
+    const narrow = (this.canvas.clientWidth || window.innerWidth) < 480;
+    const gap = narrow
+      ? Math.min(88, 340 / Math.max(n, 1))
+      : Math.min(132, 500 / Math.max(n, 1));
+    const fan = narrow ? 0.05 : 0.1;
     for(let i = 0; i < n; i++){
       const t = n === 1 ? 0.5 : i / (n - 1);
-      const x = (t - 0.5) * gap * n * 0.95;
-      const rotY = (0.5 - t) * 0.1; // ~±3–6°
-      const z = -Math.abs(t - 0.5) * 8;
+      const x = (t - 0.5) * gap * n * (narrow ? 0.88 : 0.95);
+      const rotY = (0.5 - t) * fan;
+      const z = -Math.abs(t - 0.5) * (narrow ? 4 : 8);
       const y = 0;
       this.cards[i].setBase(x, y, z, rotY);
     }
@@ -3920,8 +3975,8 @@ function startDrag(e,id){
   const move=ev=>{
     const t=ev.touches?ev.touches[0]:ev;
     const r=canvas.getBoundingClientRect();
-    const sx=(t.clientX-r.left)*(canvas.width/r.width);
-    const sy=(t.clientY-r.top)*(canvas.height/r.height);
+    const sx=(t.clientX-r.left)*(W/Math.max(1,r.width));
+    const sy=(t.clientY-r.top)*(H/Math.max(1,r.height));
     const L=toLogic(sx,sy);
     const def=CARDS[id];
     const valid=isValidPlace(L.x,L.y,'me',id);
@@ -4330,8 +4385,8 @@ document.getElementById('btn-menu').onclick=()=>{
 canvas.addEventListener('click',e=>{
   if(state!=='play')return;
   const r=canvas.getBoundingClientRect();
-  const sx=(e.clientX-r.left)*(canvas.width/r.width);
-  const sy=(e.clientY-r.top)*(canvas.height/r.height);
+  const sx=(e.clientX-r.left)*(W/Math.max(1,r.width));
+  const sy=(e.clientY-r.top)*(H/Math.max(1,r.height));
   const L=toLogic(sx,sy);
   if(placeDefMode){
     if(defCharges<=0||countDef('me')>=MAX_DEF_TOWERS){placeDefMode=false;updateHUD();return;}

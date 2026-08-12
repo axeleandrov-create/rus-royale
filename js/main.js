@@ -3825,13 +3825,13 @@ class Hand3D {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.fov = 34;
-    /* На телефоне карты меньше (камера выше), на компе без изменений */
+    /* На телефоне камера дальше — все карты влезают в экран */
     const phone = w <= 520;
     const baseZ = 420 * Math.max(1, 420 / Math.max(280, w));
-    this.camera.position.set(0, phone ? 62 : 55, phone ? baseZ * 1.22 : baseZ);
+    this.camera.position.set(0, phone ? 68 : 55, phone ? baseZ * 1.45 : baseZ);
     this.camera.lookAt(0, 8, 0);
     this.camera.updateProjectionMatrix();
-    this._cardScale = phone ? 0.78 : 1;
+    this._cardScale = phone ? 0.68 : 1;
     this.layout();
   }
   clear(){
@@ -3858,13 +3858,15 @@ class Hand3D {
   layout(){
     const n = this.cards.length;
     if(!n) return;
-    const gap = Math.min(132, 500 / Math.max(n, 1));
+    const w = this.canvas.clientWidth || window.innerWidth;
+    const phone = w <= 520;
+    const gap = Math.min(phone ? 100 : 132, (phone ? 380 : 500) / Math.max(n, 1));
     const sc = this._cardScale || 1;
     for(let i = 0; i < n; i++){
       const t = n === 1 ? 0.5 : i / (n - 1);
-      const x = (t - 0.5) * gap * n * 0.95;
-      const rotY = (0.5 - t) * 0.1;
-      const z = -Math.abs(t - 0.5) * 8;
+      const x = (t - 0.5) * gap * n * (phone ? 0.88 : 0.95);
+      const rotY = (0.5 - t) * (phone ? 0.06 : 0.1);
+      const z = -Math.abs(t - 0.5) * (phone ? 5 : 8);
       this.cards[i].setBase(x, 0, z, rotY);
       this.cards[i].baseScale = sc;
     }

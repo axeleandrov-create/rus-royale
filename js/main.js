@@ -115,11 +115,12 @@ function resize(){
       handH = Math.max(handH, trayEl.getBoundingClientRect().height || 0);
   }
   const phone = cssW <= 520;
-  const marginTop = phone ? 32 : 40;
+  const marginTop = phone ? 28 : 40;
+  /* Поле максимально большое; отступ снизу = реальная высота руки */
   const marginBot = playing
-    ? Math.max(phone ? 160 : 180, Math.round(handH + (phone ? 16 : 24)))
-    : 24;
-  const sidePad = phone ? 8 : 16;
+    ? Math.max(phone ? 132 : 180, Math.round(handH + (phone ? 8 : 24)))
+    : 20;
+  const sidePad = phone ? 4 : 16;
   const availH = Math.max(80, H - marginTop - marginBot);
   const availW = Math.max(80, W - sidePad * 2);
   const aspect = ARENA.w / ARENA.h;
@@ -140,9 +141,13 @@ if (window.visualViewport) {
 }
 resize();
 
-/** На маленьком экране всё на 20% компактнее (юниты/башни). */
+/** Телефон: без доп. сжатия спрайтов — поле само масштабируется. */
 function phoneViewScale(){
-  return (W > 0 ? W : window.innerWidth) <= 520 ? 0.8 : 1;
+  return 1;
+}
+/** На компе: было +23%, потом −17% → ×1.0209. */
+function desktopUnitScale(){
+  return (W > 0 ? W : window.innerWidth) > 520 ? (1.23 * 0.83) : 1;
 }
 /** Плоская доска + лёгкий угол камеры. */
 function depthScale(ly){
@@ -3032,16 +3037,17 @@ function drawUnit(u){
     const t = Math.min(1, u.spawnAlpha);
     spawnPop = t < 0.55 ? (0.2 + t * 1.7) : (1.15 - (t - 0.55) * 0.33);
   }
-  const scale = (u.atkAnim > 0 ? 1.1 : 1) * roleScale * spawnPop * (s.scale || 1);
+  const deskU = desktopUnitScale();
+  const scale = (u.atkAnim > 0 ? 1.1 : 1) * roleScale * spawnPop * (s.scale || 1) * deskU;
   const alpha = (u.spawnAlpha!=null?u.spawnAlpha:1) * (u.dying ? Math.max(0,(u.deathTimer||0)/0.85) : 1);
   ctx.globalAlpha = alpha;
   /* CR: тень у ног + тонкое командное кольцо */
-  const footR = 14 * roleScale * (s.scale || 1);
+  const footR = 14 * roleScale * (s.scale || 1) * deskU;
   ctx.fillStyle = 'rgba(0,0,0,0.32)';
-  ctx.beginPath(); ctx.ellipse(x, s.y + 7, footR, 4.5 * phoneViewScale(), 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, s.y + 7, footR, 4.5 * phoneViewScale() * deskU, 0, 0, Math.PI * 2); ctx.fill();
   const team = (window.VisualTheme && VisualTheme.TEAM[u.side==='me'?'me':'ai']) || null;
   ctx.beginPath();
-  ctx.ellipse(x, s.y + 6, footR * 0.93, 4.2 * phoneViewScale(), 0, 0, Math.PI * 2);
+  ctx.ellipse(x, s.y + 6, footR * 0.93, 4.2 * phoneViewScale() * deskU, 0, 0, Math.PI * 2);
   ctx.strokeStyle = team ? team.stroke : (u.side === 'me' ? 'rgba(100,181,246,0.75)' : 'rgba(239,154,154,0.75)');
   ctx.lineWidth = 2;
   ctx.stroke();
@@ -3050,7 +3056,7 @@ function drawUnit(u){
     ctx.strokeStyle = 'rgba(129,199,132,0.55)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.ellipse(x, s.y + 6, footR * 1.2, 5.5 * phoneViewScale(), 0, 0, Math.PI * 2);
+    ctx.ellipse(x, s.y + 6, footR * 1.2, 5.5 * phoneViewScale() * deskU, 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = alpha;
   }
@@ -3112,8 +3118,8 @@ function drawUnit(u){
   }
   if(!u.dying){
     const pct = Math.max(0, u.hp / u.max);
-    const bw = Math.round(30 * roleScale * phoneViewScale());
-    const bh = Math.round(y - 34 * roleScale * phoneViewScale());
+    const bw = Math.round(30 * roleScale * phoneViewScale() * deskU);
+    const bh = Math.round(y - 34 * roleScale * phoneViewScale() * deskU);
     const barH = 8;
     ctx.fillStyle = '#111'; ctx.fillRect(x - bw/2, bh, bw, barH);
     ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
@@ -3807,8 +3813,8 @@ class Hand3D {
     this.camera.position.set(0, 55, 420);
     this.camera.lookAt(0, 8, 0);
     this.camera.updateProjectionMatrix();
-    /* На телефоне карты на 20% меньше, чтобы помещались */
-    this._cardScale = w <= 520 ? 0.8 : 1;
+    /* На узком экране чуть компактнее, без сильного сжатия */
+    this._cardScale = w <= 520 ? 0.92 : 1;
     this.layout();
   }
   clear(){

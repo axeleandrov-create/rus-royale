@@ -55,20 +55,19 @@
       #topbar{font-size:.75rem;padding:5px 8px;padding-top:max(5px,env(safe-area-inset-top))}
       #topbar .timer{font-size:.92rem}
       #hand-tray{
-        height:min(168px,26vh);width:100vw;max-width:100%;
+        height:min(150px,24vh);width:100vw;max-width:100%;
         border-radius:14px 14px 0 0;
-        padding:4px 8px max(4px,env(safe-area-inset-bottom));
+        padding:4px 6px max(4px,env(safe-area-inset-bottom));
       }
-      /* карты на ~20% меньше базовых 70×96 */
-      .card{width:56px;height:77px}
+      .card{width:62px;height:86px}
       .card .role-badge{width:22px;height:22px;font-size:.82rem}
       .card .cost{width:20px;height:20px;font-size:.62rem}
       #elixir-wrap{
-        bottom:calc(min(168px,26vh) + 6px + env(safe-area-inset-bottom,0px));
+        bottom:calc(min(150px,24vh) + 6px + env(safe-area-inset-bottom,0px));
         width:min(220px,72vw);height:12px;
       }
       #hand3d{
-        height:min(168px,26vh);
+        height:min(150px,24vh);
         padding-bottom:env(safe-area-inset-bottom,0px);
       }
       #btn-play{padding:14px 12px;font-size:1.05rem}

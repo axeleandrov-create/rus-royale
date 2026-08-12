@@ -114,13 +114,12 @@ function resize(){
     if (trayEl && !trayEl.classList.contains('hidden'))
       handH = Math.max(handH, trayEl.getBoundingClientRect().height || 0);
   }
-  const phone = cssW <= 520;
-  const marginTop = phone ? 28 : 40;
-  /* Поле максимально большое; отступ снизу = реальная высота руки */
+  /* Те же отступы, что на компе — телефон = уменьшенная копия */
+  const marginTop = 40;
   const marginBot = playing
-    ? Math.max(phone ? 132 : 180, Math.round(handH + (phone ? 8 : 24)))
-    : 20;
-  const sidePad = phone ? 4 : 16;
+    ? Math.max(180, Math.round(handH + 24))
+    : 24;
+  const sidePad = 12;
   const availH = Math.max(80, H - marginTop - marginBot);
   const availW = Math.max(80, W - sidePad * 2);
   const aspect = ARENA.w / ARENA.h;
@@ -141,13 +140,14 @@ if (window.visualViewport) {
 }
 resize();
 
-/** Телефон: без доп. сжатия спрайтов — поле само масштабируется. */
-function phoneViewScale(){
-  return 1;
+/** Эталон ширины поля (как на компе) — юниты/башни масштабируются пропорционально. */
+const BOARD_REF_W = 360;
+function boardScale(){
+  return field.w > 0 ? field.w / BOARD_REF_W : 1;
 }
-/** На компе: было +23%, потом −17% → ×1.0209. */
-function desktopUnitScale(){
-  return (W > 0 ? W : window.innerWidth) > 520 ? (1.23 * 0.83) : 1;
+/** Общий множитель юнитов (как настройка «на компе»). */
+function unitSizeBoost(){
+  return 1.23 * 0.83;
 }
 /** Плоская доска + лёгкий угол камеры. */
 function depthScale(ly){
@@ -158,7 +158,7 @@ function toScreen(lx, ly){
   return {
     x: field.x + (lx / ARENA.w) * field.w,
     y: field.y + field.h - ((ly / ARENA.h) * field.h),
-    scale: depthScale(ly) * phoneViewScale()
+    scale: depthScale(ly) * boardScale()
   };
 }
 function toLogic(sx,sy){
@@ -3037,17 +3037,17 @@ function drawUnit(u){
     const t = Math.min(1, u.spawnAlpha);
     spawnPop = t < 0.55 ? (0.2 + t * 1.7) : (1.15 - (t - 0.55) * 0.33);
   }
-  const deskU = desktopUnitScale();
+  const deskU = unitSizeBoost();
   const scale = (u.atkAnim > 0 ? 1.1 : 1) * roleScale * spawnPop * (s.scale || 1) * deskU;
   const alpha = (u.spawnAlpha!=null?u.spawnAlpha:1) * (u.dying ? Math.max(0,(u.deathTimer||0)/0.85) : 1);
   ctx.globalAlpha = alpha;
   /* CR: тень у ног + тонкое командное кольцо */
   const footR = 14 * roleScale * (s.scale || 1) * deskU;
   ctx.fillStyle = 'rgba(0,0,0,0.32)';
-  ctx.beginPath(); ctx.ellipse(x, s.y + 7, footR, 4.5 * phoneViewScale() * deskU, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, s.y + 7, footR, 4.5 * boardScale() * deskU, 0, 0, Math.PI * 2); ctx.fill();
   const team = (window.VisualTheme && VisualTheme.TEAM[u.side==='me'?'me':'ai']) || null;
   ctx.beginPath();
-  ctx.ellipse(x, s.y + 6, footR * 0.93, 4.2 * phoneViewScale() * deskU, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, s.y + 6, footR * 0.93, 4.2 * boardScale() * deskU, 0, 0, Math.PI * 2);
   ctx.strokeStyle = team ? team.stroke : (u.side === 'me' ? 'rgba(100,181,246,0.75)' : 'rgba(239,154,154,0.75)');
   ctx.lineWidth = 2;
   ctx.stroke();
@@ -3056,7 +3056,7 @@ function drawUnit(u){
     ctx.strokeStyle = 'rgba(129,199,132,0.55)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.ellipse(x, s.y + 6, footR * 1.2, 5.5 * phoneViewScale() * deskU, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, s.y + 6, footR * 1.2, 5.5 * boardScale() * deskU, 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = alpha;
   }
@@ -3118,9 +3118,9 @@ function drawUnit(u){
   }
   if(!u.dying){
     const pct = Math.max(0, u.hp / u.max);
-    const bw = Math.round(30 * roleScale * phoneViewScale() * deskU);
-    const bh = Math.round(y - 34 * roleScale * phoneViewScale() * deskU);
-    const barH = 8;
+    const bw = Math.round(30 * roleScale * boardScale() * deskU);
+    const bh = Math.round(y - 34 * roleScale * boardScale() * deskU);
+    const barH = Math.max(6, Math.round(8 * boardScale()));
     ctx.fillStyle = '#111'; ctx.fillRect(x - bw/2, bh, bw, barH);
     ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
     ctx.strokeRect(x - bw/2 + 0.5, bh + 0.5, bw - 1, barH - 1);
@@ -3132,19 +3132,20 @@ function drawUnit(u){
 function drawBuilding(b){
   const s = toScreen(b.x, b.y);
   const pulse = b.atkFlash > 0 ? 1.08 : 1;
+  const bs = (s.scale || 1) * pulse;
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.beginPath(); ctx.ellipse(s.x, s.y + 4, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(s.x, s.y + 4, 16 * bs, 5 * bs, 0, 0, Math.PI * 2); ctx.fill();
   ctx.imageSmoothingEnabled = true;
   if(b.char && b.char.anim){
     const fr = b.char.anim.current();
-    const sz = Math.round(52 * pulse);
+    const sz = Math.round(52 * bs);
     if(fr) ctx.drawImage(fr, s.x - sz/2, s.y - sz + 6, sz, sz);
   } else {
     ctx.fillStyle = '#6d4c41';
-    roundRect(s.x - 16 * pulse, s.y - 30, 32 * pulse, 28, 4); ctx.fill();
-    ctx.font = Math.round(22 * pulse) + 'px system-ui';
+    roundRect(s.x - 16 * bs, s.y - 30 * bs, 32 * bs, 28 * bs, 4); ctx.fill();
+    ctx.font = Math.round(22 * bs) + 'px system-ui';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(b.emoji || '🏰', s.x, s.y - 14);
+    ctx.fillText(b.emoji || '🏰', s.x, s.y - 14 * bs);
   }
   if(b.role==='aura'){
     ctx.strokeStyle='rgba(129,199,132,0.35)'; ctx.lineWidth=2;
@@ -3810,11 +3811,12 @@ class Hand3D {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.fov = 34;
-    this.camera.position.set(0, 55, 420);
+    /* Дальше камера на узком экране → те же пропорции карт, что на компе */
+    const z = 420 * Math.max(1, 420 / Math.max(280, w));
+    this.camera.position.set(0, 55, z);
     this.camera.lookAt(0, 8, 0);
     this.camera.updateProjectionMatrix();
-    /* На узком экране чуть компактнее, без сильного сжатия */
-    this._cardScale = w <= 520 ? 0.92 : 1;
+    this._cardScale = 1;
     this.layout();
   }
   clear(){
@@ -3841,8 +3843,7 @@ class Hand3D {
   layout(){
     const n = this.cards.length;
     if(!n) return;
-    const narrow = (this.canvas.clientWidth || window.innerWidth) <= 520;
-    const gap = Math.min(narrow ? 108 : 132, (narrow ? 420 : 500) / Math.max(n, 1));
+    const gap = Math.min(132, 500 / Math.max(n, 1));
     const sc = this._cardScale || 1;
     for(let i = 0; i < n; i++){
       const t = n === 1 ? 0.5 : i / (n - 1);

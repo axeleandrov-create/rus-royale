@@ -126,9 +126,9 @@ function resize(){
   const aspect = ARENA.w / ARENA.h;
   let fw = availW, fh = fw / aspect;
   if (fh > availH) { fh = availH; fw = fh * aspect; }
-  /* Только телефон: камера выше — поле и юниты меньше, видно больше */
+  /* Только телефон: чуть отдалить камеру (поле меньше экрана, но крупнее чем 0.78) */
   if (phone) {
-    const cam = 0.78;
+    const cam = 0.94;
     fw *= cam;
     fh *= cam;
   }
@@ -151,6 +151,13 @@ resize();
 const BOARD_REF_W = 360;
 function boardScale(){
   return field.w > 0 ? field.w / BOARD_REF_W : 1;
+}
+function isPhoneView(){
+  return (W > 0 ? W : window.innerWidth) <= 520;
+}
+/** На телефоне юниты идут медленнее — карта «длиннее». */
+function phoneWalkMul(){
+  return isPhoneView() ? 0.78 : 1;
 }
 /** Общий множитель юнитов (как настройка «на компе»). */
 function unitSizeBoost(){
@@ -1209,7 +1216,7 @@ function updateUnits(dt){
     let spdMul=1;
     if(u.stunT>0) spdMul=0;
     else if(u.slowT>0){ u.slowT-=dt; spdMul=0.5; }
-    u.speed=u.baseSpeed*spdMul;
+    u.speed=u.baseSpeed*spdMul*phoneWalkMul();
 
     // дальность от Стрельбища
     let rangeMul=1;

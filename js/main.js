@@ -159,9 +159,9 @@ function isPhoneView(){
 function phoneWalkMul(){
   return isPhoneView() ? 0.78 : 1;
 }
-/** Общий множитель юнитов (−10% от предыдущего). */
+/** Юниты: −10% везде; на компе ещё −10%. */
 function unitSizeBoost(){
-  return 1.23 * 0.83 * 0.9;
+  return 1.23 * 0.83 * 0.9 * (isPhoneView() ? 1 : 0.9);
 }
 /** Плоская доска + лёгкий угол камеры. */
 function depthScale(ly){

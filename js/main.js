@@ -118,7 +118,7 @@ function resize(){
   const phone = cssW <= 520;
   const marginTop = phone ? 28 : 40;
   const marginBot = playing
-    ? Math.max(phone ? 250 : 180, Math.round(handH + (phone ? 8 : 24)))
+    ? Math.max(phone ? 140 : 180, Math.round(handH + (phone ? 8 : 24)))
     : 24;
   const sidePad = phone ? 8 : 12;
   const availH = Math.max(80, H - marginTop - marginBot);
@@ -162,10 +162,10 @@ function isPhoneView(){
 function phoneWalkMul(){
   return isPhoneView() ? 0.78 : 1;
 }
-/** Юниты: −10% везде; на компе ещё −10%; на телефоне ×0.62 затем +15%. */
+/** Юниты: −10% везде; на компе ещё −10%; на телефоне ×0.62. */
 function unitSizeBoost(){
   const base = 1.23 * 0.83 * 0.9;
-  if (isPhoneView()) return base * 0.62 * 1.15;
+  if (isPhoneView()) return base * 0.62;
   return base * 0.9;
 }
 /** Башни на телефоне чуть меньше. */
@@ -3837,13 +3837,13 @@ class Hand3D {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.fov = 34;
-    /* На телефоне карты ×2.5 от прежнего 0.78 */
+    /* На телефоне: читаемый размер карт, все 4 влезают */
     const phone = w <= 520;
     const baseZ = 420 * Math.max(1, 420 / Math.max(280, w));
-    this.camera.position.set(0, phone ? 48 : 55, phone ? baseZ * 1.12 : baseZ);
+    this.camera.position.set(0, phone ? 62 : 55, phone ? baseZ * 1.55 : baseZ);
     this.camera.lookAt(0, 8, 0);
     this.camera.updateProjectionMatrix();
-    this._cardScale = phone ? (0.78 * 2.5) : 1;
+    this._cardScale = phone ? 0.78 : 1;
     this.layout();
   }
   clear(){
@@ -3872,11 +3872,11 @@ class Hand3D {
     if(!n) return;
     const w = this.canvas.clientWidth || window.innerWidth;
     const phone = w <= 520;
-    const gap = Math.min(phone ? 118 : 132, (phone ? 420 : 500) / Math.max(n, 1));
+    const gap = Math.min(phone ? 96 : 132, (phone ? 360 : 500) / Math.max(n, 1));
     const sc = this._cardScale || 1;
     for(let i = 0; i < n; i++){
       const t = n === 1 ? 0.5 : i / (n - 1);
-      const x = (t - 0.5) * gap * n * (phone ? 0.78 : 0.95);
+      const x = (t - 0.5) * gap * n * (phone ? 0.86 : 0.95);
       const rotY = (0.5 - t) * (phone ? 0.06 : 0.1);
       const z = -Math.abs(t - 0.5) * (phone ? 5 : 8);
       this.cards[i].setBase(x, 0, z, rotY);

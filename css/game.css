@@ -51,30 +51,6 @@
     .card.rarity-epic{border-color:#ce93d8}
     .card.rarity-legendary{border-color:#ffd54f}
     .card.rarity-mythic{border-color:#ff6e40}
-    @media (max-width:520px){
-      #topbar{font-size:.75rem;padding:5px 8px;padding-top:max(5px,env(safe-area-inset-top))}
-      #topbar .timer{font-size:.92rem}
-      /* Камера выше: рука компактнее */
-      #hand-tray{
-        height:min(160px,24vh);width:100vw;max-width:100%;
-        border-radius:16px 16px 0 0;
-        padding:4px 6px max(4px,env(safe-area-inset-bottom));
-      }
-      .card{width:54px;height:74px}
-      .card .role-badge{width:22px;height:22px;font-size:.82rem}
-      .card .cost{width:20px;height:20px;font-size:.62rem}
-      #elixir-wrap{
-        bottom:calc(min(160px,24vh) + 6px + env(safe-area-inset-bottom,0px));
-        width:min(200px,68vw);height:11px;
-      }
-      #hand3d{
-        height:min(160px,24vh);
-        padding-bottom:env(safe-area-inset-bottom,0px);
-      }
-      #btn-play{padding:14px 12px;font-size:1.05rem}
-      #menu button{padding:12px;font-size:.92rem}
-      #menu .brand-mini{font-size:clamp(1.5rem,6.5vw,2rem)}
-    }
     #hand3d{
       position:fixed;left:0;right:0;bottom:0;
       height:min(230px,32vh);width:100%;
@@ -94,6 +70,30 @@
     }
     #elixir-num{position:absolute;right:8px;top:-4px;color:#f3e5f5;font-weight:900;font-size:.72rem;text-shadow:0 1px 2px #000}
     #elixir-wave{position:absolute;left:8px;top:-4px;color:#ce93d8;font-weight:800;font-size:.65rem;text-shadow:0 1px 2px #000}
+    /* Телефон: ПОСЛЕ базовых правил, иначе #hand3d 230px перебивает компакт */
+    @media (max-width:520px){
+      #topbar{font-size:.75rem;padding:5px 8px;padding-top:max(5px,env(safe-area-inset-top))}
+      #topbar .timer{font-size:.92rem}
+      #hand-tray{
+        height:min(118px,17vh)!important;width:100vw;max-width:100%;
+        border-radius:14px 14px 0 0;
+        padding:2px 4px max(2px,env(safe-area-inset-bottom));
+      }
+      .card{width:48px;height:66px}
+      .card .role-badge{width:20px;height:20px;font-size:.75rem}
+      .card .cost{width:18px;height:18px;font-size:.58rem}
+      #elixir-wrap{
+        bottom:calc(min(118px,17vh) + 4px + env(safe-area-inset-bottom,0px))!important;
+        width:min(180px,64vw);height:10px;
+      }
+      #hand3d{
+        height:min(118px,17vh)!important;
+        padding-bottom:env(safe-area-inset-bottom,0px);
+      }
+      #btn-play{padding:14px 12px;font-size:1.05rem}
+      #menu button{padding:12px;font-size:.92rem}
+      #menu .brand-mini{font-size:clamp(1.5rem,6.5vw,2rem)}
+    }
     #toast{display:none!important} /* боевые подсказки отключены */
     #toast.show{opacity:0}
     #unit-tip{display:none!important} /* тултипы юнитов отключены — не портят визуал */

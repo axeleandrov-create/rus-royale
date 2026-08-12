@@ -118,7 +118,7 @@ function resize(){
   const phone = cssW <= 520;
   const marginTop = phone ? 28 : 40;
   const marginBot = playing
-    ? Math.max(phone ? 124 : 180, Math.round(handH + (phone ? 10 : 24)))
+    ? Math.max(phone ? 108 : 180, Math.round(handH + (phone ? 6 : 24)))
     : 24;
   const sidePad = phone ? 8 : 12;
   const availH = Math.max(80, H - marginTop - marginBot);
@@ -150,7 +150,10 @@ resize();
 /** Эталон ширины поля (как на компе) — юниты/башни масштабируются пропорционально. */
 const BOARD_REF_W = 360;
 function boardScale(){
-  return field.w > 0 ? field.w / BOARD_REF_W : 1;
+  const raw = field.w > 0 ? field.w / BOARD_REF_W : 1;
+  /* На телефоне не раздувать юнитов/башни вместе с широким полем */
+  if (isPhoneView()) return Math.min(raw, 0.72);
+  return raw;
 }
 function isPhoneView(){
   return (W > 0 ? W : window.innerWidth) <= 520;
@@ -159,10 +162,10 @@ function isPhoneView(){
 function phoneWalkMul(){
   return isPhoneView() ? 0.78 : 1;
 }
-/** Юниты: −10% везде; на компе ещё −10%; на телефоне ×0.72. */
+/** Юниты: −10% везде; на компе ещё −10%; на телефоне ×0.62. */
 function unitSizeBoost(){
   const base = 1.23 * 0.83 * 0.9;
-  if (isPhoneView()) return base * 0.72;
+  if (isPhoneView()) return base * 0.62;
   return base * 0.9;
 }
 /** Башни на телефоне чуть меньше. */
@@ -3834,13 +3837,13 @@ class Hand3D {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / Math.max(1, h);
     this.camera.fov = 34;
-    /* На телефоне камера дальше — все карты влезают в экран */
+    /* На телефоне камера сильно дальше — 4 карты влезают */
     const phone = w <= 520;
     const baseZ = 420 * Math.max(1, 420 / Math.max(280, w));
-    this.camera.position.set(0, phone ? 68 : 55, phone ? baseZ * 1.45 : baseZ);
+    this.camera.position.set(0, phone ? 78 : 55, phone ? baseZ * 2.05 : baseZ);
     this.camera.lookAt(0, 8, 0);
     this.camera.updateProjectionMatrix();
-    this._cardScale = phone ? 0.68 : 1;
+    this._cardScale = phone ? 0.5 : 1;
     this.layout();
   }
   clear(){
@@ -3869,11 +3872,11 @@ class Hand3D {
     if(!n) return;
     const w = this.canvas.clientWidth || window.innerWidth;
     const phone = w <= 520;
-    const gap = Math.min(phone ? 100 : 132, (phone ? 380 : 500) / Math.max(n, 1));
+    const gap = Math.min(phone ? 78 : 132, (phone ? 300 : 500) / Math.max(n, 1));
     const sc = this._cardScale || 1;
     for(let i = 0; i < n; i++){
       const t = n === 1 ? 0.5 : i / (n - 1);
-      const x = (t - 0.5) * gap * n * (phone ? 0.88 : 0.95);
+      const x = (t - 0.5) * gap * n * (phone ? 0.82 : 0.95);
       const rotY = (0.5 - t) * (phone ? 0.06 : 0.1);
       const z = -Math.abs(t - 0.5) * (phone ? 5 : 8);
       this.cards[i].setBase(x, 0, z, rotY);

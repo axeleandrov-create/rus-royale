@@ -118,7 +118,7 @@ function resize(){
   const phone = cssW <= 520;
   const marginTop = phone ? 28 : 40;
   const marginBot = playing
-    ? Math.max(phone ? 140 : 180, Math.round(handH + (phone ? 12 : 24)))
+    ? Math.max(phone ? 124 : 180, Math.round(handH + (phone ? 10 : 24)))
     : 24;
   const sidePad = phone ? 8 : 12;
   const availH = Math.max(80, H - marginTop - marginBot);
@@ -126,9 +126,9 @@ function resize(){
   const aspect = ARENA.w / ARENA.h;
   let fw = availW, fh = fw / aspect;
   if (fh > availH) { fh = availH; fw = fh * aspect; }
-  /* Только телефон: чуть отдалить камеру (поле меньше экрана, но крупнее чем 0.78) */
+  /* Телефон: поле на весь доступный экран (cam 1.0) */
   if (phone) {
-    const cam = 0.94;
+    const cam = 1.0;
     fw *= cam;
     fh *= cam;
   }
@@ -159,10 +159,17 @@ function isPhoneView(){
 function phoneWalkMul(){
   return isPhoneView() ? 0.78 : 1;
 }
-/** Юниты: −10% везде; на компе ещё −10%. */
+/** Юниты: −10% везде; на компе ещё −10%; на телефоне ×0.72. */
 function unitSizeBoost(){
-  return 1.23 * 0.83 * 0.9 * (isPhoneView() ? 1 : 0.9);
+  const base = 1.23 * 0.83 * 0.9;
+  if (isPhoneView()) return base * 0.72;
+  return base * 0.9;
 }
+/** Башни на телефоне чуть меньше. */
+function phoneTowerScale(){
+  return isPhoneView() ? 0.82 : 1;
+}
+window.phoneTowerScale = phoneTowerScale;
 /** Плоская доска + лёгкий угол камеры. */
 function depthScale(ly){
   const t = Math.max(0, Math.min(1, (ly || 0) / ARENA.h));
@@ -1679,6 +1686,7 @@ function drawTower(t){
     return;
   }
   const s=toScreen(t.lx,t.ly);
+  const ts = phoneTowerScale();
   const dead=!t.alive;
   const isKing=t.kind==='king';
   const isStrelets=t.kind==='strelets';
@@ -1687,7 +1695,7 @@ function drawTower(t){
     ? {a:'#64b5f6', b:'#1565c0', roof:'#ffd54f'}
     : {a:'#ef9a9a', b:'#c62828', roof:'#ffcc80'};
   ctx.fillStyle='rgba(0,0,0,0.28)';
-  ctx.beginPath();ctx.ellipse(s.x,s.y+8,isKing?30:20,10,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(s.x,s.y+8,(isKing?30:20)*ts,10*ts,0,0,Math.PI*2);ctx.fill();
   function stoneKeep(x,y,w,h,r){
     const g=ctx.createLinearGradient(x,y,x+w,y+h);
     g.addColorStop(0, dead?'#8d6e63':teamCol.a);
@@ -1699,27 +1707,27 @@ function drawTower(t){
     roundRect(x+3,y+6,w-6,h*0.28,3);ctx.stroke();
   }
   if(isDef){
-    stoneKeep(s.x-14,s.y-34,28,34,5);
+    stoneKeep(s.x-14*ts,s.y-34*ts,28*ts,34*ts,5);
     ctx.fillStyle=dead?'#795548':teamCol.roof;
-    ctx.beginPath();ctx.arc(s.x,s.y-34,11,Math.PI,0);ctx.fill();
+    ctx.beginPath();ctx.arc(s.x,s.y-34*ts,11*ts,Math.PI,0);ctx.fill();
   }else if(isStrelets){
     ctx.globalAlpha=dead?0.45:1;
-    stoneKeep(s.x-17,s.y-44,34,44,6);
+    stoneKeep(s.x-17*ts,s.y-44*ts,34*ts,44*ts,6);
     ctx.fillStyle=dead?'#795548':teamCol.roof;
     for(let i=-1;i<=1;i++){
-      roundRect(s.x-15+i*11,s.y-52,9,11,2);ctx.fill();
+      roundRect(s.x-15*ts+i*11*ts,s.y-52*ts,9*ts,11*ts,2);ctx.fill();
     }
-    ctx.fillStyle='#fff8e1';ctx.font='12px system-ui';ctx.textAlign='center';
-    if(!dead) ctx.fillText('🏹',s.x,s.y-24);
+    ctx.fillStyle='#fff8e1';ctx.font=Math.round(12*ts)+'px system-ui';ctx.textAlign='center';
+    if(!dead) ctx.fillText('🏹',s.x,s.y-24*ts);
     ctx.globalAlpha=1;
   }else{
     const asleep=!t.active&&t.alive;
     ctx.globalAlpha=dead?0.4:(asleep?0.55:1);
-    const bw=44,bh=60;
+    const bw=44*ts,bh=60*ts;
     stoneKeep(s.x-bw/2,s.y-bh,bw,bh,7);
     ctx.fillStyle=dead?'#795548':teamCol.roof;
-    ctx.beginPath();ctx.moveTo(s.x,s.y-bh-14);ctx.lineTo(s.x+bw*0.45,s.y-bh+2);ctx.lineTo(s.x-bw*0.45,s.y-bh+2);ctx.closePath();ctx.fill();
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x,s.y-bh-16,3.5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.moveTo(s.x,s.y-bh-14*ts);ctx.lineTo(s.x+bw*0.45,s.y-bh+2*ts);ctx.lineTo(s.x-bw*0.45,s.y-bh+2*ts);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x,s.y-bh-16*ts,3.5*ts,0,Math.PI*2);ctx.fill();
     ctx.globalAlpha=1;
     if(asleep){
       ctx.fillStyle='rgba(0,0,0,0.35)';
@@ -1729,9 +1737,9 @@ function drawTower(t){
   if(t.hurtT>0){
     ctx.globalAlpha=Math.min(0.5,t.hurtT*2.2);
     ctx.fillStyle='#ff1744';
-    if(isDef) roundRect(s.x-14,s.y-34,28,34,5);
-    else if(isStrelets) roundRect(s.x-17,s.y-44,34,44,6);
-    else roundRect(s.x-22,s.y-60,44,60,7);
+    if(isDef) roundRect(s.x-14*ts,s.y-34*ts,28*ts,34*ts,5);
+    else if(isStrelets) roundRect(s.x-17*ts,s.y-44*ts,34*ts,44*ts,6);
+    else roundRect(s.x-22*ts,s.y-60*ts,44*ts,60*ts,7);
     ctx.fill();
     ctx.globalAlpha=1;
     flashWhite=Math.max(flashWhite,0.08);
@@ -1739,12 +1747,13 @@ function drawTower(t){
   const showHp=t.alive&&(isStrelets||isDef||(isKing&&t.active));
   if(showHp){
     const pct=t.hp/t.max;
-    const bh=isKing?60:(isStrelets?44:34);
-    const barH=10;
-    ctx.fillStyle='#111';ctx.fillRect(s.x-24,s.y-bh-18,48,barH);
-    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.strokeRect(s.x-24,s.y-bh-18,48,barH);
+    const bh=(isKing?60:(isStrelets?44:34))*ts;
+    const barH=Math.max(7,Math.round(10*ts));
+    const barW=48*ts;
+    ctx.fillStyle='#111';ctx.fillRect(s.x-barW/2,s.y-bh-18*ts,barW,barH);
+    ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.strokeRect(s.x-barW/2,s.y-bh-18*ts,barW,barH);
     ctx.fillStyle=pct>0.55?'#66bb6a':(pct>0.3?'#ffca28':'#ef5350');
-    ctx.fillRect(s.x-24,s.y-bh-18,48*pct,barH);
+    ctx.fillRect(s.x-barW/2,s.y-bh-18*ts,barW*pct,barH);
   }
 }
 /* ========== Пиксель-арт 90-х: SNES / Sega Genesis (1990–95) ==========

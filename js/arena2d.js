@@ -433,7 +433,8 @@ const GameArena = (function () {
     const team = me ? '#1e88e5' : '#e53935';
     const teamDark = me ? '#0d47a1' : '#b71c1c';
     const accent = '#ffd54f';
-    const ds = s.scale || 1;
+    const ts = (typeof window.phoneTowerScale === 'function') ? window.phoneTowerScale() : 1;
+    const ds = (s.scale || 1) * ts;
     const bw = (isKing ? 48 : isStrelets ? 34 : 26) * ds;
     const bh = (isKing ? 64 : isStrelets ? 48 : 34) * ds;
     const left = s.x - bw / 2;
@@ -563,17 +564,18 @@ const GameArena = (function () {
     const showHp = t.alive && (isStrelets || isDef || (isKing && t.active));
     if (showHp) {
       const pct = t.hp / t.max;
-      const barY = top - (isKing ? 28 : 20);
-      const barH = 10;
+      const barY = top - (isKing ? 28 : 20) * Math.min(1.2, ds);
+      const barW = 48 * Math.max(0.65, Math.min(1.1, ds));
+      const barH = Math.max(7, Math.round(10 * Math.min(1, ds + 0.15)));
       ctx.fillStyle = '#111';
-      ctx.fillRect(s.x - 24, barY, 48, barH);
+      ctx.fillRect(s.x - barW / 2, barY, barW, barH);
       ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.strokeRect(s.x - 24, barY, 48, barH);
-      const hg = ctx.createLinearGradient(s.x - 24, 0, s.x + 24, 0);
+      ctx.strokeRect(s.x - barW / 2, barY, barW, barH);
+      const hg = ctx.createLinearGradient(s.x - barW / 2, 0, s.x + barW / 2, 0);
       hg.addColorStop(0, pct > 0.55 ? '#66bb6a' : pct > 0.3 ? '#ffca28' : '#ef5350');
       hg.addColorStop(1, pct > 0.55 ? '#2e7d32' : pct > 0.3 ? '#f57f17' : '#c62828');
       ctx.fillStyle = hg;
-      ctx.fillRect(s.x - 24, barY, 48 * pct, barH);
+      ctx.fillRect(s.x - barW / 2, barY, barW * pct, barH);
     }
   }
 

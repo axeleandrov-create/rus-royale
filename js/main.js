@@ -3568,6 +3568,7 @@ class Card3D {
     this.animT = Math.random() * 10;
     this.basePos = new THREE.Vector3();
     this.baseRotY = 0;
+    this.baseScale = 1;
     this.flyFrom = null; this.flyToPos = null; this.flyT = 0; this.flyDur = 0.45; this.onFlyDone = null;
 
     const def = CARDS[id];
@@ -3713,9 +3714,10 @@ class Card3D {
     }
 
     // цели hover / select — плавный lerp
-    let wantY = 0, wantSc = 1;
-    if(this.hovered && this.playable){ wantY = 22; wantSc = 1.08; }
-    if(this.selected){ wantY = 34; wantSc = 1.12; }
+    const bs = this.baseScale || 1;
+    let wantY = 0, wantSc = bs;
+    if(this.hovered && this.playable){ wantY = 22; wantSc = bs * 1.08; }
+    if(this.selected){ wantY = 34; wantSc = bs * 1.12; }
     const k = Math.min(1, dt * 12);
     this.curY += (wantY - this.curY) * k;
     this.curSc += (wantSc - this.curSc) * k;
@@ -3866,7 +3868,7 @@ class Hand3D {
       const z = -Math.abs(t - 0.5) * (narrow ? 3 : 8);
       const y = 0;
       this.cards[i].setBase(x, y, z, rotY);
-      if (this.cards[i].group) this.cards[i].group.scale.setScalar(sc);
+      this.cards[i].baseScale = sc;
     }
   }
   clearHover(){
